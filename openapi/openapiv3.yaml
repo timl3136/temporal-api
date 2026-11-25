@@ -20765,6 +20765,36 @@ components:
           items:
             $ref: '#/components/schemas/WorkflowExecutionOptionsUpdatedEventAttributes_WorkflowUpdateOptionsUpdate'
           description: Updates to workflow updates options.
+        resultSubscription:
+          allOf:
+            - $ref: '#/components/schemas/WorkflowExecutionOptionsUpdatedEventAttributes_ResultSubscription'
+          description: |-
+            Result subscription paired with attached_request_id and attached_completion_callbacks,
+             which carry the subscription request ID and its callback token, respectively.
+             When absent, attached callbacks use legacy behavior.
+             The server must reject this metadata on public callback submission paths.
+        canceledResultSubscriptionRequestIds:
+          type: array
+          items:
+            type: string
+          description: |-
+            Applying this event marks callbacks for these result subscription request IDs as canceled.
+             Each ID is the attached_request_id from the subscription's attachment event, independent
+             of any server-internal callback map key.
+    WorkflowExecutionOptionsUpdatedEventAttributes_ResultSubscription:
+      type: object
+      properties:
+        resultFormatVersion:
+          type: integer
+          description: |-
+            Version 1 uses the GetWorkflowExecutionResult single-Payload result format.
+             The server must set a supported, positive version.
+          format: int32
+        resolvedExecution:
+          allOf:
+            - $ref: '#/components/schemas/WorkflowExecution'
+          description: Target execution resolved when the subscription was attached, including its run ID.
+      description: Server-authored metadata for a GetWorkflowExecutionResult subscription.
     WorkflowExecutionOptionsUpdatedEventAttributes_WorkflowUpdateOptionsUpdate:
       type: object
       properties:

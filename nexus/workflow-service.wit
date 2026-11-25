@@ -16,6 +16,7 @@ interface workflow-service {
     duration,
     header,
     memo,
+    payload,
     payloads,
     placeholder,
     priority,
@@ -157,4 +158,23 @@ interface workflow-service {
   signal-with-start-workflow: func(
     request: signal-with-start-workflow-request,
   ) -> signal-with-start-workflow-response;
+
+  /// @nexus.experimental
+  /// @nexus.proto "temporal.api.common.v1.WorkflowExecution" typescript-import="@temporalio/proto"
+  record workflow-execution {
+    workflow-id: string,
+    run-id: string,
+  }
+
+  /// @nexus.experimental
+  /// @nexus.proto "temporal.api.workflowservice.v1.GetWorkflowExecutionResultRequest" typescript-import="@temporalio/proto"
+  record get-workflow-execution-result-request {
+    execution: option<workflow-execution>,
+  }
+
+  /// @nexus.operation name="GetWorkflowExecutionResult"
+  /// @nexus.experimental
+  get-workflow-execution-result: func(
+    request: get-workflow-execution-result-request,
+  ) -> payload;
 }

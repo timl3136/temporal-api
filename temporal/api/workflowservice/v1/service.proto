@@ -12,6 +12,7 @@ option csharp_namespace = "Temporalio.Api.WorkflowService.V1";
 
 import "google/api/annotations.proto";
 import "nexusannotations/v1/options.proto";
+import "temporal/api/common/v1/message.proto";
 import "temporal/api/protometa/v1/annotations.proto";
 import "temporal/api/workflowservice/v1/request_response.proto";
 
@@ -509,6 +510,19 @@ service WorkflowService {
         option (temporal.api.protometa.v1.request_header) = {
             header: "temporal-resource-id"
             value: "workflow:{workflow_id}"
+        };
+    }
+
+    // Experimental. GetWorkflowExecutionResult waits for the result of an existing workflow
+    // execution in the caller's namespace. It is available to workflows through the system Nexus endpoint.
+    //
+    // (-- api-linter: core::0127::http-annotation=disabled
+    //     aip.dev/not-precedent: This operation is invoked by workflows through system Nexus. --)
+    rpc GetWorkflowExecutionResult (GetWorkflowExecutionResultRequest) returns (temporal.api.common.v1.Payload) {
+        option (nexusannotations.v1.operation).tags = "exposed";
+        option (temporal.api.protometa.v1.request_header) = {
+            header: "temporal-resource-id"
+            value: "workflow:{execution.workflow_id}"
         };
     }
 

@@ -122,8 +122,8 @@ func generate(gen *protogen.Plugin) error {
 				methodName := string(m.Desc.Name())
 				hasOps = true
 				addOperation(langsDoc, svcName, methodName,
-					langRefs(p, f.Desc, m.Input.Desc),
-					langRefs(p, f.Desc, m.Output.Desc),
+					langRefs(p, m.Input.Desc),
+					langRefs(p, m.Output.Desc),
 				)
 			}
 		}
@@ -144,8 +144,8 @@ func generate(gen *protogen.Plugin) error {
 // Python and TypeScript refs require the corresponding prefix params to be set; if
 // empty they are omitted. Both use the last two path segments of go_package
 // ({service}/v{n}), dropping any intermediate grouping directory.
-func langRefs(p params, file protoreflect.FileDescriptor, msg protoreflect.MessageDescriptor) map[string]string {
-	opts, ok := file.Options().(*descriptorpb.FileOptions)
+func langRefs(p params, msg protoreflect.MessageDescriptor) map[string]string {
+	opts, ok := msg.ParentFile().Options().(*descriptorpb.FileOptions)
 	if !ok || opts == nil {
 		return nil
 	}

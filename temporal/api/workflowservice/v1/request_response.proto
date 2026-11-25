@@ -1001,6 +1001,10 @@ message SignalWithStartWorkflowExecutionResponse {
     temporal.api.common.v1.Link signal_link = 3;
 }
 
+message GetWorkflowExecutionResultRequest {
+    temporal.api.common.v1.WorkflowExecution execution = 1;
+}
+
 message ResetWorkflowExecutionRequest {
     string namespace = 1;
     // The workflow to reset. If this contains a run ID then the workflow will be reset back to the

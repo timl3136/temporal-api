@@ -17,3 +17,18 @@ services:
           $pythonRef: temporalio.api.workflowservice.v1.SignalWithStartWorkflowExecutionResponse
           $rubyRef: Temporalio::Api::WorkflowService::V1::SignalWithStartWorkflowExecutionResponse
           $typescriptRef: '@temporalio/api/workflowservice/v1.SignalWithStartWorkflowExecutionResponse'
+      GetWorkflowExecutionResult:
+        input:
+          $dotnetRef: Temporalio.Api.WorkflowService.V1.GetWorkflowExecutionResultRequest
+          $goRef: go.temporal.io/api/workflowservice/v1.GetWorkflowExecutionResultRequest
+          $javaRef: io.temporal.api.workflowservice.v1.GetWorkflowExecutionResultRequest
+          $pythonRef: temporalio.api.workflowservice.v1.GetWorkflowExecutionResultRequest
+          $rubyRef: Temporalio::Api::WorkflowService::V1::GetWorkflowExecutionResultRequest
+          $typescriptRef: '@temporalio/api/workflowservice/v1.GetWorkflowExecutionResultRequest'
+        output:
+          $dotnetRef: Temporalio.Api.Common.V1.Payload
+          $goRef: go.temporal.io/api/common/v1.Payload
+          $javaRef: io.temporal.api.common.v1.Payload
+          $pythonRef: temporalio.api.common.v1.Payload
+          $rubyRef: Temporalio::Api::Common::V1::Payload
+          $typescriptRef: '@temporalio/api/common/v1.Payload'

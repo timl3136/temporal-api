@@ -15,6 +15,10 @@ lint:
   ignore:
     - cmd
     - google
+  ignore_only:
+    RPC_RESPONSE_STANDARD_NAME:
+      # The system Nexus operation returns a bare Payload.
+      - temporal/api/workflowservice/v1/service.proto
   disallow_comment_ignores: true
 breaking:
   use:
