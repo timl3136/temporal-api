@@ -154,7 +154,7 @@ nexus-rpc-yaml-install:
 	@cd cmd/protoc-gen-nexus-rpc-yaml && go install .
 
 ##### Compile system Nexus WIT files #####
-system-nexus-wit: system-nexus-wit-install nex-gen-install
+system-nexus-wit: nexus-rpc-yaml system-nexus-wit-install nex-gen-install
 	printf $(COLOR) "Generate system Nexus WIT..."
 	tmp=$$(mktemp -d); trap 'rm -rf "$$tmp"' EXIT; \
 	protoc -I $(PROTO_ROOT) --include_imports \
@@ -171,6 +171,7 @@ system-nexus-wit: system-nexus-wit-install nex-gen-install
 		--input nexus/notification-service.wit \
 		--input nexus/deps \
 		--output nexus/notification-service.wit
+	@cd cmd/protoc-gen-system-nexus-wit && go test -count=1 .
 
 system-nexus-wit-install:
 	printf $(COLOR) "Build and install protoc-gen-system-nexus-wit..."

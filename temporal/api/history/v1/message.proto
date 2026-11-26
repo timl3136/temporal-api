@@ -914,15 +914,6 @@ message WorkflowExecutionOptionsUpdatedEventAttributes {
         repeated temporal.api.common.v1.Callback attached_completion_callbacks = 3;
     }
 
-    // Server-authored metadata for a GetWorkflowExecutionResult subscription.
-    message ResultSubscription {
-        // Version 1 uses the GetWorkflowExecutionResult single-Payload result format.
-        // The server must set a supported, positive version.
-        int32 result_format_version = 1;
-        // Target execution resolved when the subscription was attached, including its run ID.
-        temporal.api.common.v1.WorkflowExecution resolved_execution = 2;
-    }
-
     // Versioning override upserted in this event.
     // Ignored if nil or if unset_versioning_override is true.
     temporal.api.workflow.v1.VersioningOverride versioning_override = 1;
@@ -951,15 +942,9 @@ message WorkflowExecutionOptionsUpdatedEventAttributes {
     // Updates to workflow updates options.
     repeated WorkflowUpdateOptionsUpdate workflow_update_options = 8;
 
-    // Result subscription paired with attached_request_id and attached_completion_callbacks,
-    // which carry the subscription request ID and its callback token, respectively.
-    // When absent, attached callbacks use legacy behavior.
-    // The server must reject this metadata on public callback submission paths.
-    ResultSubscription result_subscription = 10;
-
-    // Applying this event marks callbacks for these result subscription request IDs as canceled.
-    // Each ID is the attached_request_id from the subscription's attachment event, independent
-    // of any server-internal callback map key.
+    // Server-authored result subscription cancellations. Applying this event marks callbacks
+    // whose Callback.result_subscription.request_id matches an ID in this list as canceled.
+    // The request ID is independent of any server-internal callback map key.
     repeated string canceled_result_subscription_request_ids = 11;
 }
 

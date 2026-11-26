@@ -234,6 +234,17 @@ message Callback {
         temporal.api.common.v1.Payload source_context = 4;
     }
 
+    // Metadata for a GetWorkflowExecutionResult subscription.
+    message ResultSubscription {
+        // The caller's original scheduled request ID, retained when the callback is inherited by another run.
+        string request_id = 1;
+        // Version 1 uses the GetWorkflowExecutionResult single-Payload result format.
+        // The server must set a supported, positive version.
+        int32 result_format_version = 2;
+        // Target execution resolved when the subscription was attached, including its run ID.
+        WorkflowExecution resolved_execution = 3;
+    }
+
     reserved 1; // For a generic callback mechanism to be added later.
     oneof variant {
         Nexus nexus = 2;
@@ -244,6 +255,12 @@ message Callback {
     // Links associated with the callback. It can be used to link to underlying resources of the
     // callback.
     repeated Link links = 100;
+
+    // Server-authored subscription metadata. When absent, the callback uses legacy behavior.
+    // This field is not settable in the API and the service must reject it with an INVALID_ARGUMENT
+    // error on every public callback input. It is exposed because callbacks are replicated across
+    // clusters via public history events, including WorkflowExecutionStarted.
+    ResultSubscription result_subscription = 101;
 }
 
 // Link can be associated with history events. It might contain information about an external entity

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"maps"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -10,10 +11,14 @@ import (
 	"testing"
 
 	nexusannotationsv1 "github.com/nexus-rpc/nexus-proto-annotations/go/nexusannotations/v1"
+	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/types/descriptorpb"
+	"google.golang.org/protobuf/types/dynamicpb"
+	"gopkg.in/yaml.v3"
 )
 
 func TestGetWorkflowExecutionResultContract(t *testing.T) {
@@ -59,6 +64,22 @@ func TestGetWorkflowExecutionResultContract(t *testing.T) {
 	if !slices.Contains(operation.GetTags(), "exposed") {
 		t.Fatal("result RPC is missing the exposed Nexus operation tag")
 	}
+	types := dynamicpb.NewTypes(files)
+	http, err := types.FindExtensionByName("google.api.http")
+	if err != nil {
+		t.Fatal(err)
+	}
+	optionsBytes, err := proto.Marshal(rpc.Options())
+	if err != nil {
+		t.Fatal(err)
+	}
+	options := dynamicpb.NewMessage(http.TypeDescriptor().ContainingMessage())
+	if err := (proto.UnmarshalOptions{Resolver: types}).Unmarshal(optionsBytes, options); err != nil {
+		t.Fatal(err)
+	}
+	if proto.HasExtension(options, http) {
+		t.Fatal("result RPC must have no google.api.http binding")
+	}
 
 	wit, err := os.ReadFile(filepath.Join(root, "nexus/workflow-service.wit"))
 	if err != nil {
@@ -72,5 +93,83 @@ func TestGetWorkflowExecutionResultContract(t *testing.T) {
   get-workflow-execution-result: func\(\s*request: get-workflow-execution-result-request,?\s*\) -> payload;`)
 	if !signature.Match(wit) {
 		t.Fatal("WIT is missing the experimental GetWorkflowExecutionResult operation with its request and payload result")
+	}
+
+	t.Run("NexusYAMLOutput", func(t *testing.T) {
+		data, err := os.ReadFile(filepath.Join(root, "nexus/temporal-proto-models-nexusrpc.yaml"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		var model struct {
+			Services map[string]struct {
+				Operations map[string]struct {
+					Output map[string]string
+				}
+			}
+		}
+		if err := yaml.Unmarshal(data, &model); err != nil {
+			t.Fatal(err)
+		}
+		got := model.Services[string(rpc.Parent().FullName())].Operations[string(rpc.Name())].Output
+		want := map[string]string{
+			"$dotnetRef":     "Temporalio.Api.Common.V1.Payload",
+			"$goRef":         "go.temporal.io/api/common/v1.Payload",
+			"$javaRef":       "io.temporal.api.common.v1.Payload",
+			"$pythonRef":     "temporalio.api.common.v1.Payload",
+			"$rubyRef":       "Temporalio::Api::Common::V1::Payload",
+			"$typescriptRef": "@temporalio/api/common/v1.Payload",
+		}
+		if !maps.Equal(got, want) {
+			t.Fatalf("Nexus YAML output refs = %v, want %v", got, want)
+		}
+	})
+
+	testResultSubscriptionRoundTrips(t, files)
+}
+
+func testResultSubscriptionRoundTrips(t *testing.T, files *protoregistry.Files) {
+	t.Helper()
+	const legacy = `nexus { url: "https://example.test/callback" }`
+	const subscription = legacy + `
+		result_subscription {
+			request_id: "original-request"
+			result_format_version: 1
+			resolved_execution { workflow_id: "target-workflow" run_id: "resolved-run" }
+		}`
+	for _, tc := range []struct {
+		name string
+		desc protoreflect.FullName
+		text string
+	}{
+		{"LegacyCallback", "temporal.api.common.v1.Callback", legacy},
+		{"SubscriptionCallback", "temporal.api.common.v1.Callback", subscription},
+		{"InheritedCallback", "temporal.api.history.v1.WorkflowExecutionStartedEventAttributes",
+			`completion_callbacks { ` + subscription + ` }`},
+		{"CanceledSubscriptions", "temporal.api.history.v1.WorkflowExecutionOptionsUpdatedEventAttributes",
+			`canceled_result_subscription_request_ids: "original-request"
+			 canceled_result_subscription_request_ids: "other-request"`},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			desc, err := files.FindDescriptorByName(tc.desc)
+			if err != nil {
+				t.Fatal(err)
+			}
+			msgType := desc.(protoreflect.MessageDescriptor)
+			want := dynamicpb.NewMessage(msgType)
+			if err := prototext.Unmarshal([]byte(tc.text), want); err != nil {
+				t.Fatal(err)
+			}
+			data, err := proto.Marshal(want)
+			if err != nil {
+				t.Fatal(err)
+			}
+			got := dynamicpb.NewMessage(msgType)
+			if err := proto.Unmarshal(data, got); err != nil {
+				t.Fatal(err)
+			}
+			if !proto.Equal(got, want) {
+				t.Fatalf("binary round trip = %v, want %v", got, want)
+			}
+		})
 	}
 }

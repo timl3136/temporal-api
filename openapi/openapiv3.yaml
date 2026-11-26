@@ -10905,6 +10905,14 @@ components:
           description: |-
             Links associated with the callback. It can be used to link to underlying resources of the
              callback.
+        resultSubscription:
+          allOf:
+            - $ref: '#/components/schemas/Callback_ResultSubscription'
+          description: |-
+            Server-authored subscription metadata. When absent, the callback uses legacy behavior.
+             This field is not settable in the API and the service must reject it with an INVALID_ARGUMENT
+             error on every public callback input. It is exposed because callbacks are replicated across
+             clusters via public history events, including WorkflowExecutionStarted.
       description: Callback to attach to various events in the system, e.g. workflow run completion.
     CallbackInfo:
       type: object
@@ -11018,6 +11026,23 @@ components:
          NexusHandler callbacks are only supported for certain types of operations, e.g. standalone Nexus operations.
          Attempting to attach a Worker callback for an unsupported operation will result in an INVALID_ARGUMENT
          error from the server.
+    Callback_ResultSubscription:
+      type: object
+      properties:
+        requestId:
+          type: string
+          description: The caller's original scheduled request ID, retained when the callback is inherited by another run.
+        resultFormatVersion:
+          type: integer
+          description: |-
+            Version 1 uses the GetWorkflowExecutionResult single-Payload result format.
+             The server must set a supported, positive version.
+          format: int32
+        resolvedExecution:
+          allOf:
+            - $ref: '#/components/schemas/WorkflowExecution'
+          description: Target execution resolved when the subscription was attached, including its run ID.
+      description: Metadata for a GetWorkflowExecutionResult subscription.
     CancelOperationRequest:
       type: object
       properties:
@@ -20765,36 +20790,14 @@ components:
           items:
             $ref: '#/components/schemas/WorkflowExecutionOptionsUpdatedEventAttributes_WorkflowUpdateOptionsUpdate'
           description: Updates to workflow updates options.
-        resultSubscription:
-          allOf:
-            - $ref: '#/components/schemas/WorkflowExecutionOptionsUpdatedEventAttributes_ResultSubscription'
-          description: |-
-            Result subscription paired with attached_request_id and attached_completion_callbacks,
-             which carry the subscription request ID and its callback token, respectively.
-             When absent, attached callbacks use legacy behavior.
-             The server must reject this metadata on public callback submission paths.
         canceledResultSubscriptionRequestIds:
           type: array
           items:
             type: string
           description: |-
-            Applying this event marks callbacks for these result subscription request IDs as canceled.
-             Each ID is the attached_request_id from the subscription's attachment event, independent
-             of any server-internal callback map key.
-    WorkflowExecutionOptionsUpdatedEventAttributes_ResultSubscription:
-      type: object
-      properties:
-        resultFormatVersion:
-          type: integer
-          description: |-
-            Version 1 uses the GetWorkflowExecutionResult single-Payload result format.
-             The server must set a supported, positive version.
-          format: int32
-        resolvedExecution:
-          allOf:
-            - $ref: '#/components/schemas/WorkflowExecution'
-          description: Target execution resolved when the subscription was attached, including its run ID.
-      description: Server-authored metadata for a GetWorkflowExecutionResult subscription.
+            Server-authored result subscription cancellations. Applying this event marks callbacks
+             whose Callback.result_subscription.request_id matches an ID in this list as canceled.
+             The request ID is independent of any server-internal callback map key.
     WorkflowExecutionOptionsUpdatedEventAttributes_WorkflowUpdateOptionsUpdate:
       type: object
       properties:
