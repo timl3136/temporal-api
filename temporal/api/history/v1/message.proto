@@ -945,7 +945,7 @@ message WorkflowExecutionOptionsUpdatedEventAttributes {
     // Server-authored result subscription cancellations. Applying this event marks callbacks
     // whose Callback.result_subscription.request_id matches an ID in this list as canceled.
     // The request ID is independent of any server-internal callback map key.
-    repeated string canceled_result_subscription_request_ids = 11;
+    repeated string canceled_result_subscription_request_ids = 10;
 }
 
 // Not used anywhere. Use case is replaced by WorkflowExecutionOptionsUpdatedEventAttributes
